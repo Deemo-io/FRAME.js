@@ -238,11 +238,23 @@ Mouse = function() {
 	mouse.cx = 0;
 	mouse.y = 0;
 	mouse.xy = 0;
+	mouse.xVel = 0;
+	mouse.yVel = 0;
 	mouse.clicking = false;
+	mouse.deltaY = 0;
+	mouse.prevDeltaY = 0;
 	
 	mouse.update = function() {
+		var prevx = mouse.x;
+		var prevy = mouse.y;
 		mouse.x = (-FRAME.x + mouse.cx) / FRAME.scaleX;
 		mouse.y = (-FRAME.y + mouse.cy) / FRAME.scaleY;
+		
+		mouse.xVel = mouse.x - prevx;
+		mouse.yVel = mouse.y - prevy;
+		
+		if (mouse.prevDeltaY != 0) mouse.deltaY = 0;
+		mouse.prevDeltaY = mouse.deltaY;
 	}
 	function move(e) {
 		mouse.cx = e.clientX;
@@ -254,9 +266,13 @@ Mouse = function() {
 	function up() {
 		mouse.clicking = false;
 	}
-	window.addEventListener('mousemove', move);
-	window.addEventListener('mousedown', down);
-	window.addEventListener('mouseup', up);
+	function wheel(e) {
+		mouse.deltaY = e.deltaY;
+	}
+	canvas.addEventListener('mousemove', move);
+	canvas.addEventListener('mousedown', down);
+	canvas.addEventListener('mouseup', up);
+	canvas.addEventListener('wheel', wheel);
 	
 	return mouse;
 }
