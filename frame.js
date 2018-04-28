@@ -15,8 +15,8 @@ FRAME.resize = function() {
 	
 	FRAME.canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 	FRAME.canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-	FRAME.x = stageWidth / 2 - FRAME.game_width * FRAME.scaleX / 2;
-	FRAME.y = stageHeight / 2 - FRAME.game_height * FRAME.scaleY / 2;
+	//FRAME.x = stageWidth / 2 - FRAME.game_width * FRAME.scaleX / 2;
+	//FRAME.y = stageHeight / 2 - FRAME.game_height * FRAME.scaleY / 2;
 	
 	FRAME.ctx.imageSmoothingEnabled = FRAME.smoothing;
 }
@@ -29,7 +29,6 @@ FRAME.init = function(w, h, canvas) {
 	window.addEventListener( 'resize', FRAME.resize, false );
 	FRAME.resize();
 }
-//call this function for screen shake
 FRAME.shake = function(amt, dur) {
 	FRAME.shakeAmount = amt;
 	FRAME.shakeDuration = dur;
@@ -50,6 +49,7 @@ FRAME.clearScreen = function() {
 FRAME.loadImage = function(path, name) {
 	var img = new Image();
 	img.src = path;
+	img.key = name;
 	FRAME.images.set(name, img);
 }
 FRAME.getImage = function(name) {
@@ -65,9 +65,9 @@ FRAME.loadSound = function(path, name, loop, vol) {
 	FRAME.sounds.set(name, audio);
 }
 FRAME.playSound = function(name) {
-	if (FRAME.sounds.get(name).loop() == false || FRAME.sounds.get(name).loop() == true && PLAY_MUSIC == true) {
-		FRAME.sounds.get(name).play();
-	}
+	var id = -1;
+	id = FRAME.sounds.get(name).play();
+	return id;
 }
 FRAME.stopSound = function(name) {
 	FRAME.sounds.get(name).stop();
@@ -118,7 +118,6 @@ class ImageStrip {
 		this.images = [];
 		this.iter = 0;
 		this.update = 0.0;
-		this.changed = false;
 		
 		this.add = function(img) {
 			this.images.push(img);
@@ -131,10 +130,6 @@ class ImageStrip {
 					this.iter = 0;
 				}
 				this.update = 0.0;
-				this.changed = true;
-			}
-			else {
-				this.changed = false;
 			}
 			return this.images[this.iter];
 		}
@@ -193,6 +188,9 @@ class Text {
 		this.rotation = rot || 0;
 		this.ctx = ctx || FRAME.ctx;
 		
+		this.ctx.font = this.fontsize + "px " + this.font;
+		this.width = this.ctx.measureText(this.text).width;
+		
 		this.update = function(deltaTime) {}
 		this.render = function() {}
 		this.draw = function() {
@@ -200,16 +198,16 @@ class Text {
 			this.ctx.rotate(this.rotation);
 				this.ctx.font = this.fontsize + "px " + this.font;
 				this.ctx.fillStyle = this.fillStyle;
-				var textWidth = this.ctx.measureText(this.text).width;
+				this.width = this.ctx.measureText(this.text).width;
 				this.render();//whatever extra stuff
 				if (this.justify == "left") {
 					this.ctx.fillText(this.text, 0, this.fontsize);
 				}
 				else if (this.justify == "right") {
-					this.ctx.fillText(this.text, -textWidth, this.fontsize);
+					this.ctx.fillText(this.text, -this.width, this.fontsize);
 				}
 				else {
-					this.ctx.fillText(this.text, -textWidth / 2, this.fontsize);
+					this.ctx.fillText(this.text, -this.width / 2, this.fontsize);
 				}
 			this.ctx.rotate(-this.rotation);
 			this.ctx.translate(-this.x, -this.y);
