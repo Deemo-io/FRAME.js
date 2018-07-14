@@ -15,8 +15,8 @@ FRAME.resize = function() {
 	
 	FRAME.canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
 	FRAME.canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-	//FRAME.x = stageWidth / 2 - FRAME.game_width * FRAME.scaleX / 2;
-	//FRAME.y = stageHeight / 2 - FRAME.game_height * FRAME.scaleY / 2;
+	FRAME.x = stageWidth / 2 - FRAME.game_width * FRAME.scaleX / 2;
+	FRAME.y = stageHeight / 2 - FRAME.game_height * FRAME.scaleY / 2;
 	
 	FRAME.ctx.imageSmoothingEnabled = FRAME.smoothing;
 }
@@ -143,6 +143,8 @@ class Collection {
 		this.y = 0;
 		this.rotation = 0;
 		this.ctx = ctx || FRAME.ctx;
+		this.scaleX = 1;
+		this.scaleY = 1;
 	}
 	add(obj) {
 		this.objects.push(obj);
@@ -166,6 +168,7 @@ class Collection {
 		}
 	}
 	draw() {
+		FRAME.ctx.scale(this.scaleX,this.scaleY);
 		for (var i = 0; i < this.objects.length; i++) {
 			this.ctx.translate(this.x, this.y);
 			this.ctx.rotate(this.rotation);
@@ -173,6 +176,7 @@ class Collection {
 			this.ctx.rotate(-this.rotation);
 			this.ctx.translate(-this.x, -this.y);
 		}
+		FRAME.ctx.scale(1/this.scaleX,1/this.scaleY);
 	}
 }
 
