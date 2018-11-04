@@ -1,4 +1,4 @@
-var FRAME = {ctx:null, canvas:null, game_width:0, game_height:0, scaleX:1, scaleY:1, x:0, y:0, smoothing:false, images: new Map(), sounds: new Map(), extraX:0, extraY:0, shakeAmount:0, shakeDuration:0};
+var FRAME = {ctx:null, canvas:null, game_width:0, game_height:0, scaleX:1, scaleY:1, x:0, y:0, smoothing:false, images: new Map(), sounds: new Map(), extraX:0, extraY:0, shakeAmount:0, shakeDuration:0, requestedResources:0, gottenResources:0, defaultFont: "Arial"};
 FRAME.resize = function() {
 	var stageWidth = window.innerWidth;
 	var stageHeight = window.innerHeight;
@@ -34,8 +34,8 @@ FRAME.shake = function(amt, dur) {
 	FRAME.shakeDuration = dur;
 }
 FRAME.clearScreen = function() {
-	FRAME.ctx.setTransform(FRAME.scaleX, 0, 0, FRAME.scaleY, FRAME.x + FRAME.extraX, FRAME.y + FRAME.extraY);
-	FRAME.ctx.clearRect(-FRAME.x / FRAME.scaleX, -FRAME.y / FRAME.scaleY, document.body.clientWidth / FRAME.scaleX, document.body.clientHeight / FRAME.scaleY);
+	FRAME.ctx.setTransform(FRAME.scaleX, 0, 0, FRAME.scaleY, FRAME.x + window.innerWidth/2 + FRAME.extraX, FRAME.y + window.innerHeight/2 + FRAME.extraY);
+	FRAME.ctx.clearRect(-FRAME.x/FRAME.scaleX - window.innerWidth/2/FRAME.scaleX, -FRAME.y/FRAME.scaleY - window.innerHeight/2/FRAME.scaleY, document.body.clientWidth / FRAME.scaleX, document.body.clientHeight / FRAME.scaleY);
 	
 	//screen shake
 	FRAME.extraX = (Math.random() * (FRAME.shakeAmount * FRAME.shakeDuration) * 2) - (FRAME.shakeAmount * FRAME.shakeDuration);
@@ -48,9 +48,18 @@ FRAME.clearScreen = function() {
 }
 FRAME.loadImage = function(path, name) {
 	var img = new Image();
-	img.src = path;
-	img.key = name;
-	FRAME.images.set(name, img);
+	var p = new Promise(function(resolve, reject) {
+		img.src = path;
+		img.onload = resolve(path);
+		img.onerror = reject(path);
+		FRAME.requestedResources++;
+	});
+	p.then(function(path){
+		FRAME.images.set(name, img);
+		FRAME.gottenResources++;
+	}, function(path) {
+		console.log(path+" couldn't be loaded.");
+	});
 }
 FRAME.getImage = function(name) {
 	return FRAME.images.get(name);
@@ -61,8 +70,12 @@ FRAME.loadSound = function(path, name, loop, vol) {
 		loop: loop||false,
 		volume: vol||1.0
 	});
+	FRAME.requestedResources++;
 	
-	FRAME.sounds.set(name, audio);
+	audio.once('load', function(){
+		FRAME.sounds.set(name, audio);
+		FRAME.gottenResources++;
+	});
 }
 FRAME.playSound = function(name) {
 	var id = -1;
@@ -185,7 +198,7 @@ class Text {
 		this.x = x || 0;
 		this.y = y || 0;
 		this.text = text || "";
-		this.font = font || "Arial";
+		this.font = font || FRAME.defaultFont;
 		this.fillStyle = fillStyle || "#333";
 		this.fontsize = fontsize || 30;
 		this.justify = justify || "left";
@@ -215,6 +228,11 @@ class Text {
 				}
 			this.ctx.rotate(-this.rotation);
 			this.ctx.translate(-this.x, -this.y);
+		}
+		
+		this.setFontSize = function(fontsize) {
+			this.fontsize = fontsize;
+			this.width = this.ctx.measureText(this.text).width;
 		}
 	}
 }
@@ -249,8 +267,8 @@ Mouse = function() {
 	mouse.update = function() {
 		var prevx = mouse.x;
 		var prevy = mouse.y;
-		mouse.x = (-FRAME.x + mouse.cx) / FRAME.scaleX;
-		mouse.y = (-FRAME.y + mouse.cy) / FRAME.scaleY;
+		mouse.x = (-FRAME.x + mouse.cx - window.innerWidth/2) / FRAME.scaleX;
+		mouse.y = (-FRAME.y + mouse.cy - window.innerHeight/2) / FRAME.scaleY;
 		
 		mouse.xVel = mouse.x - prevx;
 		mouse.yVel = mouse.y - prevy;
