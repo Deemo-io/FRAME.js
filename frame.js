@@ -21,20 +21,20 @@ FRAME.resize = function() {
 FRAME.init = function(w, h) {
 	FRAME.game_width = w;
 	FRAME.game_height = h;
-	
+
 	//making canvas and changing margins
 	var canvas = document.createElement('canvas');
 	canvas.style.position = "absolute";
 	document.body.style.margin = "0";
 	document.body.style.padding = "0";
-	document.body.append(canvas);
-	
+	document.body.appendChild(canvas);
+
 	//configure canvas for drawing
 	FRAME.canvas = canvas;
 	FRAME.ctx = canvas.getContext("2d");
 	window.addEventListener('resize', FRAME.resize, false);
 	FRAME.resize();
-	
+
 	//modifying functions to make them more performant
 	FRAME.ctx.oldDrawImage = FRAME.ctx.drawImage;
 	FRAME.ctx.drawImage = function(img,x,y,w,h) {
@@ -242,6 +242,12 @@ class Text {
 	}
 	setFontSize(fontSize) {
 		this.fontSize = fontSize;
+		this.ctx.font = this.fontSize + "px " + this.font;
+		this.width = this.ctx.measureText(this.text).width;
+	}
+	setText(txt) {
+		this.text = txt;
+		this.ctx.font = this.fontSize + "px " + this.font;
 		this.width = this.ctx.measureText(this.text).width;
 	}
 }
@@ -286,7 +292,7 @@ Mouse = function() {
 
 		if (mouse.prevDeltaY != 0) mouse.deltaY = 0;
 		mouse.prevDeltaY = mouse.deltaY;
-		
+
 		if (mouse.checkClick)
 			mouse.prevClicking = mouse.clicking;
 		else
