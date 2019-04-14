@@ -271,6 +271,7 @@ Mouse = function() {
 	var mouse = {};
 	mouse.x = 0;
 	mouse.cx = 0;
+	mouse.cy = 0;
 	mouse.y = 0;
 	mouse.xy = 0;
 	mouse.xVel = 0;
