@@ -254,11 +254,17 @@ class Text {
 
 Keyboard = function() {
 	keys = [];
-
+	
 	function down(e) {
+		if (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32)
+			e.preventDefault();
+		
 		keys[e.keyCode] = true;
 	}
 	function up(e) {
+		if (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32)
+			e.preventDefault();
+		
 		keys[e.keyCode] = false;
 	}
 	window.addEventListener('keydown', down, false);
@@ -271,7 +277,6 @@ Mouse = function() {
 	var mouse = {};
 	mouse.x = 0;
 	mouse.cx = 0;
-	mouse.cy = 0;
 	mouse.y = 0;
 	mouse.xy = 0;
 	mouse.xVel = 0;
