@@ -19,17 +19,17 @@ Creating a canvas that updates every frame looks something like this:
 ```javascript
 window.onload = function() {
 	FRAME.init(800,600);
-    main();
+  main();
 }
 
 function main() {
 	FRAME.clearScreen();
 
-    //update and render here
+  //update and render here
 
-    //queues main() to be called again at render time.
-    //Uses requestAnimationFrame by default and has fallbacks
-	requestFrame(main);
+  //queues main() to be called again at render time.
+  //Uses requestAnimationFrame by default and has fallbacks
+  requestFrame(main);
 }
 ```
 
@@ -93,11 +93,11 @@ Here is a basic example with actors:
 ```javascript
 class Square extends Actor {
   update() {
- 	//move square to the right
+    //move square to the right
     this.x += 3;
   }
   render() {
-  	//this draws a square with center at (this.x, this.y)
+    //this draws a square with center at (this.x, this.y)
     this.ctx.fillStyle = "#222";
     this.ctx.fillRect(-25, -25, 50, 50);
   }
@@ -153,29 +153,29 @@ On calling `loadImage()` or `loadSound()`, `FRAME.requestedResources` will be in
 FRAME.js also has basic support for animations using images in the form of the `ImageStrip` class. Below is a simple example of using ImageStrips in an actor class.
 ```javascript
 class Player extends Actor {
-	constructor(x,y) {
-    	super(x,y);
+  constructor(x,y) {
+    super(x,y);
 
-        //declare image strip and add the images 'walk1' and 'walk2'
-        this.walkStrip = new ImageStrip();
-        this.walkStrip.add(FRAME.getImage('walk1'));
-        this.walkStrip.add(FRAME.getImage('walk2'));
+    //declare image strip and add the images 'walk1' and 'walk2'
+    this.walkStrip = new ImageStrip();
+    this.walkStrip.add(FRAME.getImage('walk1'));
+    this.walkStrip.add(FRAME.getImage('walk2'));
 
-        //declare width and height, assuming they are the same for both images
-        this.image = this.walkStrip.images[0];//the first image, 'walk1'
-        this.width = this.image.width;
-        this.height = this.image.height;
-    }
-    update() {
-    	//sets our image to the current image on walkStrip. '12' refers to the
-        //amount of time that must elapse to switch images. '1' refers to
-        //the amount of time that has elapsed
-    	this.image = this.walkStrip.step(12,1);
-    }
-    render() {
-        //we basically draw our image, centered at (this.x, this.y)
-        this.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
-    }
+    //declare width and height, assuming they are the same for both images
+    this.image = this.walkStrip.images[0];//the first image, 'walk1'
+    this.width = this.image.width;
+    this.height = this.image.height;
+  }
+  update() {
+    //sets our image to the current image on walkStrip. '12' refers to the
+    //amount of time that must elapse to switch images. '1' refers to
+    //the amount of time that has elapsed
+    this.image = this.walkStrip.step(12,1);
+  }
+  render() {
+    //we basically draw our image, centered at (this.x, this.y)
+    this.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
+  }
 }
 ```
 
