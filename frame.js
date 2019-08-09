@@ -1,3 +1,4 @@
+// Copyright: (c) 2019 Zack Seliger
 var FRAME = {ctx:null, canvas:null, game_width:0, game_height:0, scaleX:1, scaleY:1, x:0, y:0, smoothing:false, images: new Map(), sounds: new Map(), extraX:0, extraY:0, shakeAmount:0, shakeDuration:0, requestedResources:0, gottenResources:0, defaultFont: "Arial"};
 FRAME.resize = function() {
 	var stageWidth = window.innerWidth;
@@ -185,7 +186,7 @@ class Collection {
 	update(deltaTime) {
 		for (var i = 0; i < this.objects.length; i++) {
 			this.objects[i].update(deltaTime);
-			if (this.objects[i].dead !== undefined && this.objects[i].dead === true) {
+			if (this.objects[i] && this.objects[i].dead === true) {
 				this.remove(this.objects[i]);
 				i--;
 			}
@@ -224,19 +225,19 @@ class Text {
 	draw() {
 		this.ctx.translate(this.x, this.y);
 		this.ctx.rotate(this.rotation);
-			this.ctx.font = this.fontSize + "px " + this.font;
-			this.ctx.fillStyle = this.fillStyle;
-			this.width = this.ctx.measureText(this.text).width;
-			this.render();//whatever extra stuff
-			if (this.justify == "left") {
-				this.ctx.fillText(this.text, 0, this.fontSize);
-			}
-			else if (this.justify == "right") {
-				this.ctx.fillText(this.text, -this.width, this.fontSize);
-			}
-			else {
-				this.ctx.fillText(this.text, -this.width / 2, this.fontSize);
-			}
+		this.ctx.font = this.fontSize + "px " + this.font;
+		this.ctx.fillStyle = this.fillStyle;
+		this.width = this.ctx.measureText(this.text).width;
+		this.render();//whatever extra stuff
+		if (this.justify == "left") {
+			this.ctx.fillText(this.text, 0, this.fontSize);
+		}
+		else if (this.justify == "right") {
+			this.ctx.fillText(this.text, -this.width, this.fontSize);
+		}
+		else {
+			this.ctx.fillText(this.text, -this.width / 2, this.fontSize);
+		}
 		this.ctx.rotate(-this.rotation);
 		this.ctx.translate(-this.x, -this.y);
 	}
@@ -254,17 +255,17 @@ class Text {
 
 Keyboard = function() {
 	keys = [];
-	
+
 	function down(e) {
 		if (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32)
 			e.preventDefault();
-		
+
 		keys[e.keyCode] = true;
 	}
 	function up(e) {
 		if (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32)
 			e.preventDefault();
-		
+
 		keys[e.keyCode] = false;
 	}
 	window.addEventListener('keydown', down, false);
@@ -276,10 +277,9 @@ Keyboard = function() {
 Mouse = function() {
 	var mouse = {};
 	mouse.x = 0;
+	mouse.y = 0;
 	mouse.cx = 0;
 	mouse.cy = 0;
-	mouse.y = 0;
-	mouse.xy = 0;
 	mouse.xVel = 0;
 	mouse.yVel = 0;
 	mouse.clicking = false;
