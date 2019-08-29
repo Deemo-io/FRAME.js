@@ -206,16 +206,16 @@ class Collection {
 }
 
 class Text {
-	constructor(x, y, text, font, fillStyle, fontSize, justify, rot, ctx) {
+	constructor(x, y, options={}) {
 		this.x = x || 0;
 		this.y = y || 0;
-		this.text = text || "";
-		this.font = font || FRAME.defaultFont;
-		this.fillStyle = fillStyle || "#333";
-		this.fontSize = fontSize || 30;
-		this.justify = justify || "left";
-		this.rotation = rot || 0;
-		this.ctx = ctx || FRAME.ctx;
+		this.text = options.text || "";
+		this.font = options.font || FRAME.defaultFont;
+		this.fillStyle = options.fillStyle || "#333";
+		this.fontSize = options.fontSize || 30;
+		this.justify = options.justify || "center";
+		this.rotation = options.rot || 0;
+		this.ctx = options.ctx || FRAME.ctx;
 
 		this.ctx.font = this.fontSize + "px " + this.font;
 		this.width = this.ctx.measureText(this.text).width;
@@ -344,4 +344,42 @@ class Timestep {
 		this.lastFrameTime = this.currentTime;
 		this.deltaTime = this.realTime / (1.0 / this.targetFPS);
 	}
+}
+
+class SceneManager {
+	constructor() {
+		this.scenes = new Map();
+		this.currentScene = "";
+		this.prevScene = "";
+	}
+	addScene(name, scene) {
+		this.scenes.set(name, scene);
+	}
+	getScene(name) {
+		return this.scenes.get(name);
+	}
+	change(name) {
+		if (this.scenes.get(this.prevScene) != undefined) {
+			this.scenes.get(this.prevScene).onUnload();
+		}
+		this.prevScene = this.currentScene;
+		this.currentScene = name;
+		this.scenes.get(this.currentScene).onLoad();
+	}
+	update(deltaTime) {
+		this.scenes.get(this.currentScene).update(deltaTime);
+	}
+	render() {
+		this.scenes.get(this.currentScene).render();
+	}
+}
+
+class Scene {
+	constructor(manager) {
+		this.manager = manager;
+	}
+	update(realTime) {}
+	render() {}
+	onLoad() {}
+	onUnload() {}
 }

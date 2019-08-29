@@ -1,3 +1,4 @@
+
 [![GitHub version](https://badge.fury.io/gh/zackseliger%2FFRAME.js.svg)](https://badge.fury.io/gh/zackseliger%2FFRAME.js) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 # FRAME.js
 An extremely lightweight, minimalistic framework for HTML5 canvas.
@@ -10,6 +11,7 @@ An extremely lightweight, minimalistic framework for HTML5 canvas.
 - [Asset management (images and audio)](#asset-management-and-animations)
 - [Keyboard/Mouse management](#keyboard-and-mouse-input)
 - [Text](#text)
+- [Scene Management](#scenes)
 
 FRAME.js does not interfere with the main game loop, allowing you to write your own.
 
@@ -199,8 +201,16 @@ Whether any mouse button is clicking. `prevClicking` is the clicking state one f
 Amount that user is scrolling and amount that user was scrolling last frame
 
 ## Text
-#### Text(?x, ?y, ?font, ?fillStyle, ?fontSize, ?justify, ?rot, ?ctx)
-All are optional and have initial values, and can be changed afterwords
+#### Text(?x, ?y, ?options)
+`options` is an object with the following (optional) properties:
+- options.font, the font used. Default is FRAME.defaultFont
+- options.fillStyle, the color for the text. Default is #222
+- options.fontSize, as an integer, in pixels. Default is 30
+- options.justify, a string specifying justification, with values 'left', 'right', or 'center'. Default is 'center'
+- options.rot, the rotation of the text. Default is 0, or no rotation
+- options.ctx, the canvas context. Default is FRAME.ctx
+
+The name of these variables during runtime are the same as at initialization, except they are stored directly on the object instead of inside of the options object.
 #### draw()
 Draw the text
 #### setFontSize(fontSize)
@@ -213,3 +223,35 @@ The justification of the text. "left", "center", and "right" are accepted values
 The color of the text. Think of ctx.fillStyle
 #### .width
 The width of the text.
+
+## Scenes
+There are two classes for scene management, `Scene` and `SceneManager`
+### Scene
+This class is intended to be extended, not instantiated. Documentation is provided to know which methods to override.
+#### Scene(?manager)
+Can take a manager or not. There is no default value. `manager` is simply put into `this.manager`
+#### update(?deltaTime)
+Expected to update the scene
+#### render()
+Expected to render the scene
+#### onLoad()
+To be called when the scene is loaded
+#### onUnload()
+To be called when the scene unloads
+#### .manager
+A field with the parent `SceneManger`. It is up to your implementation to call the constructor with a correct value, but the program will not break if it isn't initialized
+
+### SceneManager
+The manager for scenes. Should be the only object interfacing directly with Scene objects
+#### SceneManager()
+No-args constructor
+#### addScene(name, scene)
+Scenes are stored in a map, with the name being the key. This adds an entry to the map
+#### getScene(name)
+Returns the scene at that name. Not usually used
+#### change(name)
+Calls `onUnload()` on the current scene, switches scenes to the given scene, then calls `onLoad()` for the newly-made current scene. This method should be used to set the initial scene.
+#### update(?deltaTime)
+Calls the `update()` method of the current scene, passing in `deltaTime` if enumerated
+#### render()
+calls the `render()` method of the current scene
