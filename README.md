@@ -31,7 +31,7 @@ function main() {
 
   //queues main() to be called again at render time.
   //Uses requestAnimationFrame by default and has fallbacks
-  requestFrame(main);
+  FRAME.requestFrame(main);
 }
 ```
 
@@ -50,6 +50,8 @@ The default resize function. Ensures that initial width and height are always vi
 Initializes FRAME.js by creating a canvas on the DOM. `.game_width` and `.game_height` are set to `w` and `h`
 #### shake(amt, duration)
 Screen shake
+#### requestFrame(func)
+Calls func one time according to requestAnimationFrame
 #### clearScreen()
 Call this every frame before rendering.
 #### loadImage(path, name)
@@ -123,7 +125,7 @@ function main() {
   testSquare.update();
   testSquare.draw();
 
-  requestFrame(main);
+  FRAME.requestFrame(main);
 }
 ```
 

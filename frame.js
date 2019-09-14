@@ -35,12 +35,6 @@ FRAME.init = function(w, h) {
 	FRAME.ctx = canvas.getContext("2d");
 	window.addEventListener('resize', FRAME.resize, false);
 	FRAME.resize();
-
-	//modifying functions to make them more performant
-	FRAME.ctx.oldDrawImage = FRAME.ctx.drawImage;
-	FRAME.ctx.drawImage = function(img,x,y,w,h) {
-		FRAME.ctx.oldDrawImage(img,Math.floor(x),Math.floor(y),Math.floor(w),Math.floor(h));
-	}
 }
 FRAME.shake = function(amt, dur) {
 	FRAME.shakeAmount = amt;
@@ -99,11 +93,11 @@ FRAME.stopSound = function(name) {
 	FRAME.sounds.get(name).stop();
 }
 
-requestFrame = ( window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
-	window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+FRAME.requestFrame = ( window.requestAnimationFrame.bind(window) || window.webkitRequestAnimationFrame.bind(window) || window.mozRequestAnimationFrame.bind(window) ||
+	window.oRequestAnimationFrame.bind(window) || window.msRequestAnimationFrame.bind(window) ||
 	function( callback ) {
 		window.setTimeout(callback, 1000 / 60);
-	});
+	}.bind(window));
 
 class Actor {
 	constructor(x, y, rot, ctx) {
@@ -305,6 +299,8 @@ Mouse = function() {
 		else
 			mouse.checkClick = true;
 	}
+	
+	//event listeners
 	function move(e) {
 		mouse.cx = e.clientX;
 		mouse.cy = e.clientY;
@@ -328,6 +324,82 @@ Mouse = function() {
 	FRAME.canvas.addEventListener('wheel', wheel);
 
 	return mouse;
+}
+
+TouchManager = function() {
+	const touches = [];
+	
+	touches.getTouch = function(id) {
+		for (let i = 0; i < touches.length; i++) {
+			if (touches[i] === undefined) continue;
+			if (touches[i].id === id) {
+				return touches[i];
+			}
+		}
+		return undefined;
+	}
+	touches.update = function () {
+		for (let i = 0; i < touches.length; i++) {
+			if (touches[i] === undefined) continue;
+			let prevx = touches[i].x;
+			let prevy = touches[i].y;
+			touches[i].x = (-FRAME.x + touches[i].cx - window.innerWidth/2) / FRAME.scaleX
+			touches[i].y = (-FRAME.y + touches[i].cy - window.innerHeight/2) / FRAME.scaleY
+			
+			touches[i].xVel = touches[i].x - prevx;
+			touches[i].yVel = touches[i].y - prevy;
+		}
+	}
+	touches.onTouchStart = function() {}
+	touches.onTouchEnd = function() {}
+	
+	//event listeners
+	function touchStart(e) {
+		for (let i = 0; i < e.changedTouches.length; i++) {
+			const newTouch = {
+				cx: e.changedTouches[i].clientX,
+				cy: e.changedTouches[i].clientY,
+				x: (-FRAME.x + e.changedTouches[i].clientX - window.innerWidth/2) / FRAME.scaleX,
+				y: (-FRAME.y + e.changedTouches[i].clientY - window.innerHeight/2) / FRAME.scaleY,
+				xVel: 0,
+				yVel: 0,
+				id: e.changedTouches[i].identifier
+			}
+			
+			touches.onTouchStart(newTouch);
+			touches[e.changedTouches[i].identifier] = newTouch;
+		}
+	}
+	function touchEnd(e) {
+		for (let i = 0; i < touches.length; i++) {
+			if (touches[i] === undefined) continue;
+			for (let j = 0; j < e.changedTouches.length; j++) {
+				if (touches[i].id === e.changedTouches[j].identifier) {
+					touches.onTouchEnd(touches[i]);
+					touches.splice(i, 1);
+					i--;
+					break;
+				}
+			}
+		}
+	}
+	function touchMove(e) {
+		for (let i = 0; i < touches.length; i++) {
+			if (touches[i] === undefined) continue;
+			for (let j = 0; j < e.changedTouches.length; j++) {
+				if (touches[i].id === e.changedTouches[j].identifier) {
+					touches[i].cx = e.changedTouches[j].clientX;
+					touches[i].cy = e.changedTouches[j].clientY;
+					break;
+				}
+			}
+		}
+	}
+	FRAME.canvas.addEventListener('touchstart', touchStart);
+	FRAME.canvas.addEventListener('touchend', touchEnd);
+	FRAME.canvas.addEventListener('touchmove', touchMove);
+	
+	return touches;
 }
 
 class Timestep {
