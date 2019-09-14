@@ -20,12 +20,12 @@ Creating a canvas that updates every frame looks something like this:
 
 ```javascript
 window.onload = function() {
-	FRAME.init(800,600);
+  FRAME.init(800,600);
   main();
 }
 
 function main() {
-	FRAME.clearScreen();
+  FRAME.clearScreen();
 
   //update and render here
 
