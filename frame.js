@@ -35,6 +35,9 @@ FRAME.init = function(w, h) {
 	FRAME.ctx = canvas.getContext("2d");
 	window.addEventListener('resize', FRAME.resize, false);
 	FRAME.resize();
+
+	//to prevent touch scrolling
+	document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 }
 FRAME.shake = function(amt, dur) {
 	FRAME.shakeAmount = amt;
@@ -327,31 +330,26 @@ Mouse = function() {
 }
 
 TouchManager = function() {
-	const touches = [];
+	const manager = {};
+	manager.touches = {};
 	
-	touches.getTouch = function(id) {
-		for (let i = 0; i < touches.length; i++) {
-			if (touches[i] === undefined) continue;
-			if (touches[i].id === id) {
-				return touches[i];
-			}
-		}
-		return undefined;
+	manager.getTouches = function() {
+		return Object.values(manager.touches);
 	}
-	touches.update = function () {
-		for (let i = 0; i < touches.length; i++) {
-			if (touches[i] === undefined) continue;
-			let prevx = touches[i].x;
-			let prevy = touches[i].y;
-			touches[i].x = (-FRAME.x + touches[i].cx - window.innerWidth/2) / FRAME.scaleX
-			touches[i].y = (-FRAME.y + touches[i].cy - window.innerHeight/2) / FRAME.scaleY
+	manager.update = function () {
+		let keys = Object.keys(manager.touches);
+		for (let i = 0; i < keys.length; i++) {
+			let prevx = manager.touches[keys[i]].x;
+			let prevy = manager.touches[keys[i]].y;
+			manager.touches[keys[i]].x = (-FRAME.x + manager.touches[keys[i]].cx - window.innerWidth/2) / FRAME.scaleX
+			manager.touches[keys[i]].y = (-FRAME.y + manager.touches[keys[i]].cy - window.innerHeight/2) / FRAME.scaleY
 			
-			touches[i].xVel = touches[i].x - prevx;
-			touches[i].yVel = touches[i].y - prevy;
+			manager.touches[keys[i]].xVel = manager.touches[keys[i]].x - prevx;
+			manager.touches[keys[i]].yVel = manager.touches[keys[i]].y - prevy;
 		}
 	}
-	touches.onTouchStart = function() {}
-	touches.onTouchEnd = function() {}
+	manager.onTouchStart = function() {}
+	manager.onTouchEnd = function() {}
 	
 	//event listeners
 	function touchStart(e) {
@@ -366,40 +364,25 @@ TouchManager = function() {
 				id: e.changedTouches[i].identifier
 			}
 			
-			touches.onTouchStart(newTouch);
-			touches[e.changedTouches[i].identifier] = newTouch;
+			manager.onTouchStart(newTouch);
+			manager.touches[e.changedTouches[i].identifier] = newTouch;
 		}
 	}
 	function touchEnd(e) {
-		for (let i = 0; i < touches.length; i++) {
-			if (touches[i] === undefined) continue;
-			for (let j = 0; j < e.changedTouches.length; j++) {
-				if (touches[i].id === e.changedTouches[j].identifier) {
-					touches.onTouchEnd(touches[i]);
-					touches.splice(i, 1);
-					i--;
-					break;
-				}
-			}
+		for (let i = 0; i < e.changedTouches.length; i++) {
+			delete manager.touches[e.changedTouches[i].identifier];
 		}
 	}
 	function touchMove(e) {
-		for (let i = 0; i < touches.length; i++) {
-			if (touches[i] === undefined) continue;
-			for (let j = 0; j < e.changedTouches.length; j++) {
-				if (touches[i].id === e.changedTouches[j].identifier) {
-					touches[i].cx = e.changedTouches[j].clientX;
-					touches[i].cy = e.changedTouches[j].clientY;
-					break;
-				}
-			}
-		}
+		for (let i = 0; i < e.changedTouches.length; i++) {
+			manager.touches[e.changedTouches[i].identifier].cx = e.changedTouches[i].clientX;
+			manager.touches[e.changedTouches[i].identifier].cy = e.changedTouches[i].clientY;}
 	}
-	FRAME.canvas.addEventListener('touchstart', touchStart);
-	FRAME.canvas.addEventListener('touchend', touchEnd);
-	FRAME.canvas.addEventListener('touchmove', touchMove);
+	window.addEventListener('touchstart', touchStart);
+	window.addEventListener('touchend', touchEnd);
+	window.addEventListener('touchmove', touchMove);
 	
-	return touches;
+	return manager;
 }
 
 class Timestep {
