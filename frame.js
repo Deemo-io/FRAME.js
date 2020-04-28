@@ -93,8 +93,9 @@ FRAME.stopSound = function(name) {
 	FRAME.sounds.get(name).stop();
 }
 
-FRAME.requestFrame = ( window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
-	window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+FRAME.requestFrame = ( window.requestAnimationFrame.bind(window) || window.webkitRequestAnimationFrame.bind(window)
+	|| window.mozRequestAnimationFrame.bind(window) || window.oRequestAnimationFrame.bind(window) ||
+	window.msRequestAnimationFrame.bind(window) ||
 	function( callback ) {
 		window.setTimeout(callback, 1000 / 60);
 	});
@@ -280,9 +281,10 @@ Keyboard = function() {
 Mouse = function(multi=false) {
 	var mouse = {};
 	mouse.x = 0;
-	mouse.y = 0;
 	mouse.cx = 0;
 	mouse.cy = 0;
+	mouse.y = 0;
+	mouse.xy = 0;
 	mouse.xVel = 0;
 	mouse.yVel = 0;
 	mouse.clicking = false;
