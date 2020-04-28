@@ -35,9 +35,6 @@ FRAME.init = function(w, h) {
 	FRAME.ctx = canvas.getContext("2d");
 	window.addEventListener('resize', FRAME.resize, false);
 	FRAME.resize();
-
-	//to prevent touch scrolling
-	document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 }
 FRAME.shake = function(amt, dur) {
 	FRAME.shakeAmount = amt;
@@ -96,11 +93,11 @@ FRAME.stopSound = function(name) {
 	FRAME.sounds.get(name).stop();
 }
 
-FRAME.requestFrame = ( window.requestAnimationFrame.bind(window) || window.webkitRequestAnimationFrame.bind(window) || window.mozRequestAnimationFrame.bind(window) ||
-	window.oRequestAnimationFrame.bind(window) || window.msRequestAnimationFrame.bind(window) ||
+FRAME.requestFrame = ( window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
+	window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
 	function( callback ) {
 		window.setTimeout(callback, 1000 / 60);
-	}.bind(window));
+	});
 
 class Actor {
 	constructor(x, y, rot, ctx) {
@@ -128,11 +125,16 @@ class ImageActor extends Actor {
 		super(x, y);
 
 		this.image = img;
-		this.width = this.image.width * size;
-		this.height = this.image.height * size;
+		this.size = size;
+		this.width = this.image.width * this.size;
+		this.height = this.image.height * this.size;
 	}
 	render() {
-		this.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
+		if (this.size === 1) {
+			this.ctx.drawImage(this.image, -this.width/2, -this.height/2);
+		}
+		else
+			this.ctx.drawImage(this.image, -this.width/2, -this.height/2, this.width, this.height);
 	}
 }
 
@@ -183,7 +185,7 @@ class Collection {
 	update(deltaTime) {
 		for (var i = 0; i < this.objects.length; i++) {
 			this.objects[i].update(deltaTime);
-			if (this.objects[i] && this.objects[i].dead === true) {
+			if (this.objects[i].dead !== undefined && this.objects[i].dead === true) {
 				this.remove(this.objects[i]);
 				i--;
 			}
@@ -210,9 +212,10 @@ class Text {
 		this.font = options.font || FRAME.defaultFont;
 		this.fillStyle = options.fillStyle || "#333";
 		this.fontSize = options.fontSize || 30;
-		this.justify = options.justify || "center";
+		this.justify = options.justify || "left";
 		this.rotation = options.rot || 0;
 		this.ctx = options.ctx || FRAME.ctx;
+		this.bold = options.bold || false;
 
 		this.ctx.font = this.fontSize + "px " + this.font;
 		this.width = this.ctx.measureText(this.text).width;
@@ -223,6 +226,7 @@ class Text {
 		this.ctx.translate(this.x, this.y);
 		this.ctx.rotate(this.rotation);
 		this.ctx.font = this.fontSize + "px " + this.font;
+		if (this.bold) this.ctx.font = "bold "+this.ctx.font;
 		this.ctx.fillStyle = this.fillStyle;
 		this.width = this.ctx.measureText(this.text).width;
 		this.render();//whatever extra stuff
@@ -241,11 +245,13 @@ class Text {
 	setFontSize(fontSize) {
 		this.fontSize = fontSize;
 		this.ctx.font = this.fontSize + "px " + this.font;
+		if (this.bold) this.ctx.font = "bold "+this.ctx.font;
 		this.width = this.ctx.measureText(this.text).width;
 	}
 	setText(txt) {
 		this.text = txt;
 		this.ctx.font = this.fontSize + "px " + this.font;
+		if (this.bold) this.ctx.font = "bold "+this.ctx.font;
 		this.width = this.ctx.measureText(this.text).width;
 	}
 }
@@ -254,24 +260,24 @@ Keyboard = function() {
 	keys = [];
 
 	function down(e) {
-		if (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32)
+		if (document.activeElement === document.body && (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32))
 			e.preventDefault();
 
 		keys[e.keyCode] = true;
 	}
 	function up(e) {
-		if (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32)
+		if (document.activeElement === document.body && (e.keyCode <= 40 && e.keyCode >= 37 || e.keyCode == 32))
 			e.preventDefault();
 
 		keys[e.keyCode] = false;
 	}
-	window.addEventListener('keydown', down, false);
-	window.addEventListener('keyup', up, false);
+	document.addEventListener('keydown', down, false);
+	document.addEventListener('keyup', up, false);
 
 	return keys;
 }
 
-Mouse = function() {
+Mouse = function(multi=false) {
 	var mouse = {};
 	mouse.x = 0;
 	mouse.y = 0;
@@ -284,6 +290,18 @@ Mouse = function() {
 	mouse.checkClick = true;
 	mouse.deltaY = 0;
 	mouse.prevDeltaY = 0;
+	mouse.disabled = false;
+
+	//for detecting the different mouse buttons individually
+	mouse.multi = multi;
+	if (mouse.multi) {
+		mouse.clicking = [];
+		mouse.prevClicking = [];
+		for (let i = 0; i < 5; i++) {
+			mouse.clicking.push(false);
+			mouse.prevClicking.push(false);
+		}
+	}
 
 	mouse.update = function() {
 		var prevx = mouse.x;
@@ -297,28 +315,45 @@ Mouse = function() {
 		if (mouse.prevDeltaY != 0) mouse.deltaY = 0;
 		mouse.prevDeltaY = mouse.deltaY;
 
-		if (mouse.checkClick)
-			mouse.prevClicking = mouse.clicking;
-		else
-			mouse.checkClick = true;
+		if (mouse.checkClick) {
+			if (mouse.multi) mouse.prevClicking = [...mouse.clicking];
+			else mouse.prevClicking = mouse.clicking;
+		}
+		else mouse.checkClick = true;
 	}
-	
-	//event listeners
 	function move(e) {
+		if (mouse.disabled) return;
 		mouse.cx = e.clientX;
 		mouse.cy = e.clientY;
 	}
-	function down() {
-		mouse.clicking = true;
-		mouse.prevClicking = false;
+	function down(e) {
+		if (mouse.disabled) return;
+		if (mouse.multi) {
+			mouse.clicking[e.button] = true;
+			mouse.prevClicking[e.button] = false;
+		}
+		else {
+			mouse.clicking = true;
+			mouse.prevClicking = false;
+		}
+
 		mouse.checkClick = false;
+		mouse.button = e.button;
 	}
-	function up() {
-		mouse.clicking = false;
-		mouse.prevClicking = true;
+	function up(e) {
+		if (mouse.disabled) return;
+		if (mouse.multi) {
+			mouse.clicking[e.button] = false;
+			mouse.prevClicking[e.button] = true;
+		}
+		else {
+			mouse.clicking = false;
+			mouse.prevClicking = true;
+		}
 		mouse.checkClick = false;
 	}
 	function wheel(e) {
+		if (mouse.disabled) return;
 		mouse.deltaY = e.deltaY;
 	}
 	FRAME.canvas.addEventListener('mousemove', move);
@@ -326,63 +361,14 @@ Mouse = function() {
 	FRAME.canvas.addEventListener('mouseup', up);
 	FRAME.canvas.addEventListener('wheel', wheel);
 
-	return mouse;
-}
+	mouse.disable = function() {
+		this.disabled = true;
+	}
+	mouse.enable = function() {
+		this.disabled = false;
+	}
 
-TouchManager = function() {
-	const manager = {};
-	manager.touches = {};
-	
-	manager.getTouches = function() {
-		return Object.values(manager.touches);
-	}
-	manager.update = function () {
-		let keys = Object.keys(manager.touches);
-		for (let i = 0; i < keys.length; i++) {
-			let prevx = manager.touches[keys[i]].x;
-			let prevy = manager.touches[keys[i]].y;
-			manager.touches[keys[i]].x = (-FRAME.x + manager.touches[keys[i]].cx - window.innerWidth/2) / FRAME.scaleX
-			manager.touches[keys[i]].y = (-FRAME.y + manager.touches[keys[i]].cy - window.innerHeight/2) / FRAME.scaleY
-			
-			manager.touches[keys[i]].xVel = manager.touches[keys[i]].x - prevx;
-			manager.touches[keys[i]].yVel = manager.touches[keys[i]].y - prevy;
-		}
-	}
-	manager.onTouchStart = function() {}
-	manager.onTouchEnd = function() {}
-	
-	//event listeners
-	function touchStart(e) {
-		for (let i = 0; i < e.changedTouches.length; i++) {
-			const newTouch = {
-				cx: e.changedTouches[i].clientX,
-				cy: e.changedTouches[i].clientY,
-				x: (-FRAME.x + e.changedTouches[i].clientX - window.innerWidth/2) / FRAME.scaleX,
-				y: (-FRAME.y + e.changedTouches[i].clientY - window.innerHeight/2) / FRAME.scaleY,
-				xVel: 0,
-				yVel: 0,
-				id: e.changedTouches[i].identifier
-			}
-			
-			manager.onTouchStart(newTouch);
-			manager.touches[e.changedTouches[i].identifier] = newTouch;
-		}
-	}
-	function touchEnd(e) {
-		for (let i = 0; i < e.changedTouches.length; i++) {
-			delete manager.touches[e.changedTouches[i].identifier];
-		}
-	}
-	function touchMove(e) {
-		for (let i = 0; i < e.changedTouches.length; i++) {
-			manager.touches[e.changedTouches[i].identifier].cx = e.changedTouches[i].clientX;
-			manager.touches[e.changedTouches[i].identifier].cy = e.changedTouches[i].clientY;}
-	}
-	window.addEventListener('touchstart', touchStart);
-	window.addEventListener('touchend', touchEnd);
-	window.addEventListener('touchmove', touchMove);
-	
-	return manager;
+	return mouse;
 }
 
 class Timestep {
@@ -399,42 +385,4 @@ class Timestep {
 		this.lastFrameTime = this.currentTime;
 		this.deltaTime = this.realTime / (1.0 / this.targetFPS);
 	}
-}
-
-class SceneManager {
-	constructor() {
-		this.scenes = new Map();
-		this.currentScene = "";
-		this.prevScene = "";
-	}
-	addScene(name, scene) {
-		this.scenes.set(name, scene);
-	}
-	getScene(name) {
-		return this.scenes.get(name);
-	}
-	change(name) {
-		if (this.scenes.get(this.prevScene) != undefined) {
-			this.scenes.get(this.prevScene).onUnload();
-		}
-		this.prevScene = this.currentScene;
-		this.currentScene = name;
-		this.scenes.get(this.currentScene).onLoad();
-	}
-	update(deltaTime) {
-		this.scenes.get(this.currentScene).update(deltaTime);
-	}
-	render() {
-		this.scenes.get(this.currentScene).render();
-	}
-}
-
-class Scene {
-	constructor(manager) {
-		this.manager = manager;
-	}
-	update(realTime) {}
-	render() {}
-	onLoad() {}
-	onUnload() {}
 }

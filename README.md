@@ -189,18 +189,26 @@ These are currently the only types of input supported by FRAME.js.
 #### Keyboard()
 `let key = new Keyboard()`. Find whether a key is pressed using `key[<index>]` where `index` is the key code testing for. Key codes can be found [here](https://keycode.info/).
 ### Mouse
-#### Mouse()
-No-args constructor
+#### Mouse(?multi)
+Constructor. 'multi' is a boolean of whether to capture all mouse buttons or not. If true, `clicking` and `prevClicking` become arrays.
 #### update()
 Calculates velocities and 'real-world' coordinates for x and y (taking scale into account) and `prevClicking`.
+#### disable()
+Disables the mouse. No click, move, or scroll events will be executed after this is called.
+#### enable()
+Enabled the mouse. Mouse is enabled by default, so `disable()` should have been called before this.
 #### .x and .y
 x and y coordinates, taking scale into account
 #### .xVel and .yVel
 The amount that x and y coordinates have changed since last frame.
 #### .clicking and .prevClicking
-Whether any mouse button is clicking. `prevClicking` is the clicking state one frame ago.
+Whether any mouse button is clicking, as a boolean. `prevClicking` is the clicking state one frame ago. IMPORTANT: if `multi` is true, `clicking` and `prevClicking` will by ARRAYS of booleans, each index corresponding to a mouse button. Index 0 is left mouse, 1 is the scroll wheel, 2 is right mouse. See mdn's MouseEvent.button for more information.
 #### .deltaY and .prevDeltaY
 Amount that user is scrolling and amount that user was scrolling last frame
+#### .multi
+Whether the mouse is capturing different buttons individually. See the constructor for more info.
+#### .disabled
+A boolean, true if the mouse is disabled. This should be read-only.
 
 ## Text
 #### Text(?x, ?y, ?options)
@@ -208,9 +216,10 @@ Amount that user is scrolling and amount that user was scrolling last frame
 - options.font, the font used. Default is FRAME.defaultFont
 - options.fillStyle, the color for the text. Default is #222
 - options.fontSize, as an integer, in pixels. Default is 30
-- options.justify, a string specifying justification, with values 'left', 'right', or 'center'. Default is 'center'
+- options.justify, a string specifying justification, with values 'left', 'right', or 'center'. Default is 'left'
 - options.rot, the rotation of the text. Default is 0, or no rotation
 - options.ctx, the canvas context. Default is FRAME.ctx
+- options.bold, a boolean. Default is false
 
 The name of these variables during runtime are the same as at initialization, except they are stored directly on the object instead of inside of the options object.
 #### draw()
@@ -218,13 +227,15 @@ Draw the text
 #### setFontSize(fontSize)
 Changes the font size
 #### setText(txt)
-Changes the text
+Changes the text. Better than ssetting .text manually as this recalculates width before drawing
 #### .justify
 The justification of the text. "left", "center", and "right" are accepted values
 #### .fillStyle
 The color of the text. Think of ctx.fillStyle
 #### .width
 The width of the text.
+#### .bold
+A boolean, draws as bold if true.
 
 ## Scenes
 There are two classes for scene management, `Scene` and `SceneManager`
