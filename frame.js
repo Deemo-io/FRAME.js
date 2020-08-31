@@ -388,3 +388,39 @@ class Timestep {
 		this.deltaTime = this.realTime / (1.0 / this.targetFPS);
 	}
 }
+
+class SceneManager {
+	constructor() {
+		this.scenes = new Map();
+		this.currentScene = "";
+		this.prevScene = "";
+	}
+	addScene(name, scene) {
+		this.scenes.set(name, scene);
+	}
+	change(name) {
+		this.prevScene = this.currentScene;
+		this.currentScene = name;
+		if (this.scenes.get(this.prevScene) != undefined) {
+			this.scenes.get(this.prevScene).onUnload();
+		}
+		this.scenes.get(this.currentScene).onLoad();
+	}
+	update(deltaTime) {
+		this.scenes.get(this.currentScene).update(deltaTime);
+	}
+	render() {
+		this.scenes.get(this.currentScene).render();
+	}
+}
+
+// just extend this class, don't use it directly
+class Scene {
+	constructor(manager) {
+		this.manager = manager;
+	}
+	update(deltaTime) {}
+	render() {}
+	onLoad() {}
+	onUnload() {}
+}
