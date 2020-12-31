@@ -1,21 +1,19 @@
 // Copyright: (c) 2019 Zack Seliger
 var FRAME = {ctx:null, canvas:null, game_width:0, game_height:0, scaleX:1, scaleY:1, x:0, y:0, smoothing:false, images: new Map(), sounds: new Map(), extraX:0, extraY:0, shakeAmount:0, shakeDuration:0, requestedResources:0, gottenResources:0, defaultFont: "Arial"};
 FRAME.resize = function() {
-	var stageWidth = window.innerWidth;
-	var stageHeight = window.innerHeight;
-
-	var ratio = stageWidth / stageHeight;
+	var ratio = window.innerWidth / window.innerHeight;
 
 	if (ratio > FRAME.game_width / FRAME.game_height) {
-		FRAME.scaleY = FRAME.scaleX = stageHeight / FRAME.game_height;
+		FRAME.scaleY = FRAME.scaleX = (window.innerHeight / FRAME.game_height) * window.devicePixelRatio;
 	}
 	else {
-		FRAME.scaleX = FRAME.scaleY = stageWidth / FRAME.game_width;
+		FRAME.scaleX = FRAME.scaleY = (window.innerWidth / FRAME.game_width) * window.devicePixelRatio;
 	}
-	if (stageWidth > 1000) FRAME.scaleX = FRAME.scaleY;
 
-	FRAME.canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-	FRAME.canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+	FRAME.canvas.width = document.body.clientWidth * window.devicePixelRatio;
+	FRAME.canvas.height = document.body.clientHeight * window.devicePixelRatio;
+	FRAME.canvas.style.width = "100%";
+	FRAME.canvas.style.height = "100%";
 
 	FRAME.ctx.imageSmoothingEnabled = FRAME.smoothing;
 }
@@ -26,6 +24,8 @@ FRAME.init = function(w, h) {
 	//making canvas and changing margins
 	var canvas = document.createElement('canvas');
 	canvas.style.position = "absolute";
+	canvas.style.top = "0";
+	canvas.style.left = "0";
 	document.body.style.margin = "0";
 	document.body.style.padding = "0";
 	document.body.appendChild(canvas);
@@ -79,6 +79,7 @@ FRAME.loadSound = function(path, name, loop, vol) {
 	});
 	FRAME.requestedResources++;
 
+	FRAME.sounds.set(name, {play:()=>{}});
 	audio.once('load', function(){
 		FRAME.sounds.set(name, audio);
 		FRAME.gottenResources++;
@@ -281,9 +282,9 @@ Keyboard = function() {
 Mouse = function(multi=false) {
 	var mouse = {};
 	mouse.x = 0;
-	mouse.cx = 0;
-	mouse.cy = 0;
 	mouse.y = 0;
+	mouse.cx = -1000;
+	mouse.cy = -1000;
 	mouse.xy = 0;
 	mouse.xVel = 0;
 	mouse.yVel = 0;
@@ -308,8 +309,8 @@ Mouse = function(multi=false) {
 	mouse.update = function() {
 		var prevx = mouse.x;
 		var prevy = mouse.y;
-		mouse.x = (-FRAME.x + mouse.cx - window.innerWidth/2) / FRAME.scaleX;
-		mouse.y = (-FRAME.y + mouse.cy - window.innerHeight/2) / FRAME.scaleY;
+		mouse.x = (-FRAME.x + (mouse.cx - window.innerWidth/2)*window.devicePixelRatio) / FRAME.scaleX;
+		mouse.y = (-FRAME.y + (mouse.cy - window.innerHeight/2)*window.devicePixelRatio) / FRAME.scaleY;
 
 		mouse.xVel = mouse.x - prevx;
 		mouse.yVel = mouse.y - prevy;
