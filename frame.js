@@ -21,6 +21,9 @@ FRAME.init = function(w, h) {
 	FRAME.game_width = w;
 	FRAME.game_height = h;
 
+	// make sure body height is 100%
+	document.body.style.height = "100%";
+
 	//making canvas and changing margins
 	var canvas = document.createElement('canvas');
 	canvas.style.position = "absolute";
